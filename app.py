@@ -103,7 +103,7 @@ def cursor_insert(cursor, data, table, fields, returning=None):
     cursor.execute(query, vals)
 
 
-def cursor_update(cursor, data, table, fields, cond, returning=None):
+def cursor_update(cursor, data, table, fields, cond, returning=None, noRowsError=True):
     fields = list(filter(lambda x: x in data, fields))
 
     s1 = ", ".join(map(lambda x: x + "=%s", fields))
@@ -128,8 +128,13 @@ def cursor_update(cursor, data, table, fields, cond, returning=None):
 
     cursor.execute(query, vals)
 
+    if noRowsError and cursor.rowcount < 1:
+        raise RuntimeError("No rows affected")
 
-def cursor_delete(cursor, data, table, cond):
+    return cursor.rowcount
+
+
+def cursor_delete(cursor, data, table, cond, noRowsError=True):
     s2 = " and ".join(map(lambda x: x + "=%s", cond))
 
     query = "delete from " + table + " where " + s2
@@ -140,6 +145,11 @@ def cursor_delete(cursor, data, table, cond):
     print("vals=", vals)
 
     cursor.execute(query, vals)
+
+    if noRowsError and cursor.rowcount < 1:
+        raise RuntimeError("No rows affected")
+
+    return cursor.rowcount
 
 
 ########################## login
