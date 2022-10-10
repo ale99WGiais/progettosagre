@@ -322,6 +322,12 @@ def generate_crsd(table, fields, cond=None, returning=None, auth="cms", auth_get
 
 ########################### API SPEFICICHE
 
+generate_crsd("casse", ["cassa", "ip_stampante", "cucina"], ["cassa"])
+generate_crsd("prodotti", ["prodotto", "quantita_disponibile", "reparto", "stato_iniziale", "allergeni", "prezzo_unitario",
+        "cauzione_unitaria", "sezione_menu", "logo"], ["prodotto"])
+generate_crsd("reparti", ["reparto", "cucina", "ip_stampante", "logo"], ["reparto", "cucina"])
+
+
 @app.route('/api/create_ordine', methods=["POST"])
 def create_ordine():
     data = getDataSettingNull()

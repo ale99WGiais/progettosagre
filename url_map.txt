@@ -1,12 +1,27 @@
-<Rule '/api/get_riassunto_ordini_consegna' (HEAD, OPTIONS, GET) -> get_riassunto_ordini_consegna>
-<Rule '/api/get_riassunto_ordini_stato' (HEAD, OPTIONS, GET) -> get_riassunto_ordini_stato>
+<Rule '/api/get_riassunto_ordini_consegna' (HEAD, GET, OPTIONS) -> get_riassunto_ordini_consegna>
+<Rule '/api/get_riassunto_ordini_stato' (HEAD, GET, OPTIONS) -> get_riassunto_ordini_stato>
 <Rule '/api/update_quantita_prodotto' (POST, OPTIONS) -> update_quantita_prodotto>
 <Rule '/api/update_stato_ordine' (POST, OPTIONS) -> update_stato_ordine>
+<Rule '/api/create_prodotti' (POST, OPTIONS) -> create_prodotti>
+<Rule '/api/delete_prodotti' (DELETE, OPTIONS) -> delete_prodotti>
+<Rule '/api/update_prodotti' (POST, OPTIONS) -> update_prodotti>
 <Rule '/api/ristampa_ordine' (POST, OPTIONS) -> ristampa_ordine>
+<Rule '/api/create_reparti' (POST, OPTIONS) -> create_reparti>
+<Rule '/api/delete_reparti' (DELETE, OPTIONS) -> delete_reparti>
+<Rule '/api/update_reparti' (POST, OPTIONS) -> update_reparti>
 <Rule '/api/annulla_ordine' (POST, OPTIONS) -> annulla_ordine>
 <Rule '/api/create_ordine' (POST, OPTIONS) -> create_ordine>
-<Rule '/api/get_ordini' (HEAD, OPTIONS, GET) -> get_ordini>
+<Rule '/api/create_casse' (POST, OPTIONS) -> create_casse>
+<Rule '/api/delete_casse' (DELETE, OPTIONS) -> delete_casse>
+<Rule '/api/update_casse' (POST, OPTIONS) -> update_casse>
+<Rule '/api/get_prodotti' (HEAD, GET, OPTIONS) -> get_prodotti>
+<Rule '/api/set_prodotti' (POST, OPTIONS) -> set_prodotti>
+<Rule '/api/get_reparti' (HEAD, GET, OPTIONS) -> get_reparti>
+<Rule '/api/set_reparti' (POST, OPTIONS) -> set_reparti>
+<Rule '/api/get_ordini' (HEAD, GET, OPTIONS) -> get_ordini>
 <Rule '/api/do_logout' (POST, OPTIONS) -> doLogout>
+<Rule '/api/get_casse' (HEAD, GET, OPTIONS) -> get_casse>
+<Rule '/api/set_casse' (POST, OPTIONS) -> set_casse>
 <Rule '/api/do_login' (POST, OPTIONS) -> doLogin>
-<Rule '/' (HEAD, OPTIONS, GET) -> home>
-<Rule '/static/<filename>' (HEAD, OPTIONS, GET) -> static>
+<Rule '/' (HEAD, GET, OPTIONS) -> home>
+<Rule '/static/<filename>' (HEAD, GET, OPTIONS) -> static>
