@@ -1,12 +1,12 @@
+<Rule '/api/get_riassunto_ordini_consegna' (GET, OPTIONS, HEAD) -> get_riassunto_ordini_consegna>
+<Rule '/api/get_riassunto_ordini_stato' (GET, OPTIONS, HEAD) -> get_riassunto_ordini_stato>
 <Rule '/api/update_quantita_prodotto' (OPTIONS, POST) -> update_quantita_prodotto>
-<Rule '/api/richiedi_recupera_pw' (OPTIONS, POST) -> get_recuperaPw>
 <Rule '/api/update_stato_ordine' (OPTIONS, POST) -> update_stato_ordine>
-<Rule '/api/get_ordini_in_corso' (OPTIONS, GET, HEAD) -> get_ordini_in_corso>
 <Rule '/api/ristampa_ordine' (OPTIONS, POST) -> ristampa_ordine>
 <Rule '/api/annulla_ordine' (OPTIONS, POST) -> annulla_ordine>
 <Rule '/api/create_ordine' (OPTIONS, POST) -> create_ordine>
-<Rule '/api/recupera_pw' (OPTIONS, POST) -> do_recuperaPw>
+<Rule '/api/get_ordini' (GET, OPTIONS, HEAD) -> get_ordini>
 <Rule '/api/do_logout' (OPTIONS, POST) -> doLogout>
 <Rule '/api/do_login' (OPTIONS, POST) -> doLogin>
-<Rule '/' (OPTIONS, GET, HEAD) -> home>
-<Rule '/static/<filename>' (OPTIONS, GET, HEAD) -> static>
+<Rule '/' (GET, OPTIONS, HEAD) -> home>
+<Rule '/static/<filename>' (GET, OPTIONS, HEAD) -> static>

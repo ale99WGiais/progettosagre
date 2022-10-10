@@ -50,6 +50,10 @@ def defaultToJson(data, status=200):
     return json.dumps(data, indent=4, sort_keys=True, default=str), status, {'Content-Type': 'application/json; charset=utf-8'}
 
 
+def selectDictKeys(data, keys):
+    return {k: v for (k, v) in data.items() if k in keys}
+
+
 def do(query, applyRes=defaultToJson, auth="cms"):
     cnx = cnxpool.getconn()
     with cnx.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
@@ -151,100 +155,12 @@ def doLogin():
         if row is None:
             return {"message": "not found", "token": None}, 401
 
+        row = data | row
         row["token"] = str(row["email"]) + secrets.token_urlsafe(32)
 
-        cursor_insert(cursor, row, "token", ["token", "email"])
+        cursor_insert(cursor, row, "token", ["token", "email", "cucina", "cassa", "reparto"])
 
         return {"message": "ok", "token": row["token"]}
-
-    return do(f, auth=None)
-
-
-@app.route("/api/recupera_pw", methods=["POST"])
-def do_recuperaPw():
-    token = request.headers.get("Authorization")
-    data = getDataSettingNull()
-
-    def f(cursor):
-        cursor.execute("select * from token natural join auth where email=%s and token=%s", (data["email"], token))
-        row = cursor.fetchone()
-
-        if row is None:
-            return {"message": "not found"}, 401
-
-        data["email_old"] = data["email"]
-        cursor_update(cursor, data, "auth", ["password"], ["email"])
-        cursor_delete(cursor, data, "token", ["email"])
-
-        return {"message": "ok"}
-
-    return do(f, auth=None)
-
-
-@app.route("/api/richiedi_recupera_pw", methods=["POST"])
-def get_recuperaPw():
-    data = getDataSettingNull()
-
-    def f(cursor):
-        d = dict()
-        d["token"] = secrets.token_urlsafe(20)
-        d["email"] = data["email"]
-
-        cursor_insert(cursor, d, "token", ["token", "email"])
-
-        import smtplib, ssl
-
-        me, you = "pc.cms.sanvito@gmail.com", d["email"]
-
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = "Link"
-        msg['From'] = me
-        msg['To'] = you
-
-        # Create the body of the message (a plain-text and an HTML version).
-        link = "http://localhost:8080/render/recupera_pw?token=" + d["token"]
-
-        text = "Segui il link per recuperare la password\n" + link
-        html = """\
-        <html>
-          <head></head>
-          <body>
-            <p>Recupero password<br>
-               Segui il link per recuperare la password<br>
-               <a href=""" + link + """>link</a>
-            </p>
-          </body>
-        </html>
-        """
-
-        # Record the MIME types of both parts - text/plain and text/html.
-        part1 = MIMEText(text, 'plain')
-        part2 = MIMEText(html, 'html')
-
-        # Attach parts into message container.
-        # According to RFC 2046, the last part of a multipart message, in this case
-        # the HTML message, is best and preferred.
-        msg.attach(part1)
-        msg.attach(part2)
-
-        smtp_server = "smtp.gmail.com"
-        port = 587  # For starttls
-        sender_email = "pc.cms.sanvito@gmail.com"
-        password = "0m9u0r2u3p9ur2pm9DS"
-
-        # Create a secure SSL context
-        context = ssl.create_default_context()
-
-        server = smtplib.SMTP(smtp_server, port)
-        server.ehlo()  # Can be omitted
-        server.starttls(context=context)  # Secure the connection
-        server.ehlo()  # Can be omitted
-        server.login(sender_email, password)
-        server.sendmail(me, you, msg.as_string())
-        # TODO: Send email here
-        server.quit()
-
-        return {"message": "ok"}
 
     return do(f, auth=None)
 
@@ -301,7 +217,9 @@ def generate_update(table, fields, cond, returning=None, auth="cms", prefix="/ap
     app.add_url_rule(prefix + "/update_" + apiname, "update_" + apiname, f_update, methods=["POST"])
 
 
-def generate_create(table, fields, returning, auth="cms", prefix="/api"):
+def generate_create(table, fields, returning, auth="cms", prefix="/api", apiname=None):
+    apiname = apiname or table
+
     def f_create():
         data = getDataSettingNull()
 
@@ -318,10 +236,12 @@ def generate_create(table, fields, returning, auth="cms", prefix="/api"):
 
         return do(f, auth=auth)
 
-    app.add_url_rule(prefix + "/create_" + table, "create_" + table, f_create, methods=["POST"])
+    app.add_url_rule(prefix + "/create_" + apiname, "create_" + apiname, f_create, methods=["POST"])
 
 
-def generate_set(table, fields, auth="cms", prefix="/api"):
+def generate_set(table, fields, auth="cms", prefix="/api", apiname=None):
+    apiname = apiname or table
+
     def f_set():
         data = getDataSettingNull()
 
@@ -335,10 +255,12 @@ def generate_set(table, fields, auth="cms", prefix="/api"):
 
         return do(f, auth=auth)
 
-    app.add_url_rule(prefix + "/set_" + table, "set_" + table, f_set, methods=["POST"])
+    app.add_url_rule(prefix + "/set_" + apiname, "set_" + apiname, f_set, methods=["POST"])
 
 
-def generate_delete(table, cond, auth="cms", prefix="/api"):
+def generate_delete(table, cond, auth="cms", prefix="/api", apiname=None):
+    apiname = apiname or table
+
     def f_delete():
         data = getDataSettingNull()
 
@@ -349,10 +271,12 @@ def generate_delete(table, cond, auth="cms", prefix="/api"):
 
         return do(f, auth=auth)
 
-    app.add_url_rule(prefix + "/delete_" + table, "delete_" + table, f_delete, methods=["DELETE"])
+    app.add_url_rule(prefix + "/delete_" + apiname, "delete_" + apiname, f_delete, methods=["DELETE"])
 
 
-def generate_get(table, auth="login", query=None, prefix="/api"):
+def generate_get(table, auth="login", query=None, prefix="/api", apiname=None):
+    apiname = apiname or table
+
     if query is None:
         query = "select * from " + table
 
@@ -364,7 +288,7 @@ def generate_get(table, auth="login", query=None, prefix="/api"):
 
         return do(f, auth=auth)
 
-    app.add_url_rule(prefix + "/get_" + table, "get_" + table, f_get, methods=["GET"])
+    app.add_url_rule(prefix + "/get_" + apiname, "get_" + apiname, f_get, methods=["GET"])
 
 
 # create read set delete
@@ -426,7 +350,6 @@ def create_ordine():
     return do(f, auth="operator")
 
 
-
 generate_update("prodotti", ["quantita_disponibile"], ["prodotto"], auth="operator", apiname="quantita_prodotto")
 
 
@@ -437,7 +360,7 @@ def update_stato_ordine():
     def f(cursor):
         data["stato_iniziale"] = "generato"
 
-        cursor_update(cursor, data, "ordini", ["stato"], ["ordine", "stato_iniziale"])
+        cursor_update(cursor, data, "ordini", ["stato"], ["ordine", "stato_iniziale", "reparto"])
 
         return {"status": "ok"}
 
@@ -455,6 +378,7 @@ def ristampa_ordine():
 
     return do(f, auth="operator")
 
+
 @app.route('/api/annulla_ordine', methods=["POST"])
 def annulla_ordine():
     data = getDataSettingNull()
@@ -468,30 +392,81 @@ def annulla_ordine():
 
     return do(f, auth="operator")
 
-def selectDictKeys(data, keys):
-    return {k: v for (k, v) in data.items() if k in keys}
 
-@app.route('/api/get_ordini_in_corso', methods=["GET"])
-def get_ordini_in_corso():
+def ordiniToList(ordini):
+    temp = {}
+    for t in ordini:
+        if t["ordine"] not in temp:
+            temp[t["ordine"]] = selectDictKeys(t, ["cassa", "ordine", "progressivo", "tavolo", "time"]) | {
+                "prodotti": []}
+
+        temp[t["ordine"]]["prodotti"].append(
+            selectDictKeys(t, ["cauzione_totale", "cauzione_unitaria", "note", "prezzo_totale", "prezzo_unitario",
+                               "prodotto", "quantita", "reparto", "sezione_menu", "stato"]))
+    return temp
+
+@app.route('/api/get_ordini', methods=["GET"])
+def get_ordini():
     def f(cursor):
         login = getLogin(cursor)
 
         cursor.execute("select * from ordini where not annullato and cucina = %s", (login["cucina"], ))
         res = cursor.fetchall()
 
-        temp = {}
-        for t in res:
-            if t["ordine"] not in temp:
-                temp[t["ordine"]] = selectDictKeys(t, ["cassa", "ordine", "progressivo", "tavolo", "time"]) | {"prodotti": []}
-
-            temp[t["ordine"]]["prodotti"].append(selectDictKeys(t, ["cauzione_totale", "cauzione_unitaria", "note", "prezzo_totale", "prezzo_unitario",
-                    "prodotto", "quantita", "reparto", "sezione_menu", "stato"]))
-        res = temp
+        res = ordiniToList(res)
 
         for t in res.values():
             t["costo_totale_ordine"] = sum(map(lambda x: x["prezzo_totale"], t["prodotti"]))
             t["cauzione_totale_ordine"] = sum(map(lambda x: x["cauzione_totale"], t["prodotti"]))
-        res=list(temp.values())
+        res = list(res.values())
+
+        return {"status": "ok", "ordini": res}
+
+
+    return do(f, auth="operator")
+
+
+@app.route('/api/get_riassunto_ordini_stato', methods=["GET"])
+def get_riassunto_ordini_stato():
+    def f(cursor):
+        login = getLogin(cursor)
+
+        print(f"select * from ordini where not annullato and cucina = '{login['cucina']}' and reparto = '{login['reparto']}' and stato <> 'chiuso'")
+
+        cursor.execute("select * from ordini where not annullato and cucina = %s and reparto = %s and stato <> 'chiuso'",
+                       (login["cucina"], login["reparto"]))
+        res = cursor.fetchall()
+
+        tmp = { "generato": [], "in lavorazione": [], "in consegna": [] }
+        for r in res:
+            tmp[r["stato"]].append(r)
+        res = tmp
+
+        for k in res:
+            res[k] = list(ordiniToList(res[k]).values())
+
+        return {"status": "ok", "ordini": res}
+
+
+    return do(f, auth="operator")
+
+
+@app.route('/api/get_riassunto_ordini_consegna', methods=["GET"])
+def get_riassunto_ordini_consegna():
+    def f(cursor):
+        login = getLogin(cursor)
+
+        cursor.execute("select distinct reparto, progressivo, ordine from ordini where not annullato and cucina = %s and stato = 'in consegna'",
+                       (login["cucina"], ))
+        res = cursor.fetchall()
+
+        tmp = dict()
+        for r in res:
+            if r["reparto"] not in res:
+                tmp[r["reparto"]] = []
+
+            tmp[r["reparto"]].append(selectDictKeys(r, ["progressivo", "ordine"]))
+        res = tmp
 
         return {"status": "ok", "ordini": res}
 
